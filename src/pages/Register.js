@@ -168,7 +168,7 @@ function Register() {
             <option value="">Stall Type</option>
             <option value="Food">Food (₹300)</option>
             <option value="Game">Game (₹600)</option>
-            <option value="Both">Both (₹900)</option>
+            <option value="Both"> game + food (₹900)</option>
             <option value="other">Other (₹300)</option>
           </select>
 
