@@ -1,0 +1,48 @@
+import { useNavigate } from "react-router-dom";
+import "../App.css";
+
+function Culture() {
+  const navigate = useNavigate();
+
+  const team = [
+    
+    { name: "Yash culture secretary (diploma)", number: "93264 32115", isAdmin: false },
+    { name: "Vrinda presedent (degree)", number: "93216 67211", isAdmin: false },
+    { name: "Sartak genral secretary (diploma)", number: "93215 71170", isAdmin: false },
+    { name: "famy member (degree)", number: "93219 44581", isAdmin: false },
+    { name: "Param mentor (diploma)", number: "9869383630", isAdmin: true },
+  ];
+
+  return (
+    <div className="App">
+      <h1>🎭 Cultural Team</h1>
+
+      <div className="form-card">
+        {team.map((member, index) => (
+          <div
+            key={index}
+            className={`team-card ${member.isAdmin ? "admin" : ""}`}
+            onClick={() => member.isAdmin && navigate("/login")}
+          >
+            <div className="team-name">
+              {index + 1}. {member.name}
+              {member.isAdmin && " "}
+            </div>
+
+            <div className="team-phone">
+              📞 {member.number}
+            </div>
+          </div>
+        ))}
+
+        <br />
+
+        <button className="btn-secondary" onClick={() => navigate("/")}>
+          ⬅ Back to Home
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default Culture;
