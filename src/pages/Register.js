@@ -21,10 +21,10 @@ function Register() {
     stallType: "",
     extraTables: 0,
     electricBoards: 0,
-    terms: false,
+    terms: false, // ✅ checkbox stays
   });
 
-  // 🔁 Handle Inputs (SAFE)
+  // 🔁 Handle input (checkbox safe)
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -39,7 +39,7 @@ function Register() {
     });
   };
 
-  // 💰 Base Price Logic
+  // 💰 Base price
   const getBasePrice = () => {
     if (form.stallType === "Food") return 300;
     if (form.stallType === "Game") return 600;
@@ -48,12 +48,11 @@ function Register() {
     return 0;
   };
 
-  // ➕ Extra Charges
+  // ➕ Extras
   const extraCharges =
     form.extraTables * 150 +
     form.electricBoards * 150;
 
-  // 🪙 Total
   const totalAmount = getBasePrice() + extraCharges;
 
   // ✅ Submit
@@ -169,7 +168,7 @@ function Register() {
             <option value="">Stall Type</option>
             <option value="Food">Food (₹300)</option>
             <option value="Game">Game (₹600)</option>
-            <option value="Both">Both (game + food) (₹900)</option>
+            <option value="Both">Both (₹900)</option>
             <option value="other">Other (₹300)</option>
           </select>
 
@@ -190,12 +189,7 @@ function Register() {
           />
         </div>
 
-        <div className="summary">
-          💰 Base Price: ₹{getBasePrice()} <br />
-          ➕ Extra Charges: ₹{extraCharges} <br />
-          🪙 <b>Total Amount: ₹{totalAmount}</b>
-        </div>
-
+        {/* ✅ CHECKBOX – NOT REMOVED */}
         <div className="terms-row">
           <label className="terms-container">
             <input
@@ -208,6 +202,12 @@ function Register() {
               I accept all <b>terms & conditions</b>
             </span>
           </label>
+        </div>
+
+        <div className="summary">
+          💰 Base Price: ₹{getBasePrice()} <br />
+          ➕ Extra Charges: ₹{extraCharges} <br />
+          🪙 <b>Total Amount: ₹{totalAmount}</b>
         </div>
 
         <div className="action-row">
