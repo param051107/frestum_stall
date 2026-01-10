@@ -6,7 +6,7 @@ function Culture() {
 
   const team = [
     
-    { name: "Yash Cultural Secretary” (diploma)", number: "93264 32115", isAdmin: false },
+    { name: "Yash Cultural Secretary (diploma)", number: "93264 32115", isAdmin: false },
     { name: "Vrinda President (degree)", number: "93216 67211", isAdmin: false },
     { name: "Sarthak General Secretary (diploma)", number: "93215 71170", isAdmin: false },
     { name: "Famy Member (degree)", number: "93219 44581", isAdmin: false },
