@@ -26,7 +26,7 @@ function Welcome() {
           marginBottom: 20
         }}
       >
-        <h1 style={{ marginBottom: 5 }}>WELCOME</h1>
+        <h1 style={{ marginBottom: 5 }}>WELCOME TO</h1>
 
         <h2
           style={{
@@ -36,14 +36,14 @@ function Welcome() {
             fontWeight: 600
           }}
         >
-          Frestum 2026
+          Festum 2026
         </h2>
 
         {/* 🔥 MOTIVATION LINES */}
         <div className="welcome-lines">
           <p>“Don’t just attend the fest — run a business!”</p>
           <p>“Turn your ideas into income.”</p>
-          <p>“Learn, lead, and earn at Frestum 2026.”</p>
+          <p>“Learn, lead, and earn at Festum 2026.”</p>
           <p>“From classroom to cash counter.”</p>
         </div>
 
