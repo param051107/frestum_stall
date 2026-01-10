@@ -21,10 +21,10 @@ function Register() {
     stallType: "",
     extraTables: 0,
     electricBoards: 0,
-    terms: false, // ✅ checkbox stays
+    terms: false,
   });
 
-  // 🔁 Handle input (checkbox safe)
+  // 🔁 Handle input (checkbox & number safe)
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -39,23 +39,28 @@ function Register() {
     });
   };
 
-  // 💰 Base price
-  const getBasePrice = () => {
-    if (form.stallType === "Food") return 300;
-    if (form.stallType === "Game") return 600;
-    if (form.stallType === "Both") return 900;
-    if (form.stallType === "other") return 300;
-    return 0;
+  /* ================= PRICE LOGIC (PROPER & LOCKED) ================= */
+
+  // 💰 Stall base prices
+  const stallPrices = {
+    Food: 300,
+    Game: 600,
+    Both: 900,
+    other: 300,
   };
 
-  // ➕ Extras
-  const extraCharges =
-    form.extraTables * 150 +
-    form.electricBoards * 150;
+  const getBasePrice = () => stallPrices[form.stallType] || 0;
 
+  // ➕ Extra charges (₹150 each)
+  const extraCharges =
+    Number(form.extraTables) * 150 +
+    Number(form.electricBoards) * 150;
+
+  // 🪙 Total amount
   const totalAmount = getBasePrice() + extraCharges;
 
-  // ✅ Submit
+  /* ================= SUBMIT ================= */
+
   const submit = async () => {
     if (loading) return;
 
@@ -110,6 +115,8 @@ function Register() {
       setLoading(false);
     }
   };
+
+  /* ================= UI ================= */
 
   return (
     <div className="App">
@@ -168,7 +175,7 @@ function Register() {
             <option value="">Stall Type</option>
             <option value="Food">Food (₹300)</option>
             <option value="Game">Game (₹600)</option>
-            <option value="Both"> game + food (₹900)</option>
+            <option value="Both">Game + Food (₹900)</option>
             <option value="other">Other (₹300)</option>
           </select>
 
@@ -189,22 +196,23 @@ function Register() {
           />
         </div>
 
-        {/* ✅ CHECKBOX – NOT REMOVED */}
-       <div className="terms-row">
-  <label className="terms-container">
-    <input
-      type="checkbox"
-      name="terms"
-      checked={form.terms}
-      onChange={handleChange}
-    />
-    <span className="checkmark"></span>
-    <span className="terms-text">
-      I accept all <b>terms & conditions</b>
-    </span>
-  </label>
-</div>
+        {/* ✅ Checkbox */}
+        <div className="terms-row">
+          <label className="terms-container">
+            <input
+              type="checkbox"
+              name="terms"
+              checked={form.terms}
+              onChange={handleChange}
+            />
+            <span className="checkmark"></span>
+            <span className="terms-text">
+              I accept all <b>terms & conditions</b>
+            </span>
+          </label>
+        </div>
 
+        {/* ✅ Price Summary */}
         <div className="summary">
           💰 Base Price: ₹{getBasePrice()} <br />
           ➕ Extra Charges: ₹{extraCharges} <br />
