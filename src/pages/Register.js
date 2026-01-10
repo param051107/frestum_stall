@@ -7,7 +7,6 @@ import "./Thanks";
 
 function Register() {
   const navigate = useNavigate();
-
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -25,13 +24,22 @@ function Register() {
     terms: false,
   });
 
-  // 🔁 Handle input
+  // 🔁 Handle Inputs (SAFE)
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm({ ...form, [name]: type === "checkbox" ? checked : value });
+
+    setForm({
+      ...form,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : type === "number"
+          ? Number(value)
+          : value,
+    });
   };
 
-  // 💰 Price logic
+  // 💰 Base Price Logic
   const getBasePrice = () => {
     if (form.stallType === "Food") return 300;
     if (form.stallType === "Game") return 600;
@@ -40,17 +48,18 @@ function Register() {
     return 0;
   };
 
+  // ➕ Extra Charges
   const extraCharges =
-    Number(form.extraTables) * 150 +
-    Number(form.electricBoards) * 150;
+    form.extraTables * 150 +
+    form.electricBoards * 150;
 
+  // 🪙 Total
   const totalAmount = getBasePrice() + extraCharges;
 
-  // ✅ Submit (SAFE)
+  // ✅ Submit
   const submit = async () => {
-    if (loading) return; // ⛔ prevent double click
+    if (loading) return;
 
-    // 🔐 validations
     if (
       !form.name ||
       !form.phone ||
@@ -67,22 +76,22 @@ function Register() {
     }
 
     if (form.phone.length !== 10) {
-      alert("Phone must be 10 digits");
+      alert("Phone must be 10 digits ❌");
       return;
     }
 
     if (form.sapId.length !== 11) {
-      alert("SAP ID must be 11 digits");
+      alert("SAP ID must be 11 digits ❌");
       return;
     }
 
     if (!form.terms) {
-      alert("Accept terms & conditions");
+      alert("Please accept terms & conditions ❌");
       return;
     }
 
     try {
-      setLoading(true); // 🔒 LOCK
+      setLoading(true);
 
       await addDoc(collection(db, "registrations"), {
         ...form,
@@ -96,8 +105,8 @@ function Register() {
       alert("Registration successful ✅");
       navigate("/thanks");
     } catch (error) {
-      console.error("❌ Firestore Error:", error);
-      alert("Something went wrong. Try again.");
+      console.error("Firestore Error:", error);
+      alert("Something went wrong ❌");
     } finally {
       setLoading(false);
     }
@@ -110,8 +119,21 @@ function Register() {
       <div className="form-card">
         <div className="form-grid">
           <input name="name" placeholder="Name" onChange={handleChange} />
-          <input name="phone" placeholder="Phone (10 digits)" maxLength={10} onChange={handleChange} />
-          <input name="sapId" placeholder="SAP ID (11 digits)" maxLength={11} onChange={handleChange} />
+
+          <input
+            name="phone"
+            placeholder="Phone (10 digits)"
+            maxLength={10}
+            onChange={handleChange}
+          />
+
+          <input
+            name="sapId"
+            placeholder="SAP ID (11 digits)"
+            maxLength={11}
+            onChange={handleChange}
+          />
+
           <input name="semester" placeholder="Semester" onChange={handleChange} />
           <input name="rollNo" placeholder="Roll No" onChange={handleChange} />
 
@@ -122,16 +144,17 @@ function Register() {
           </select>
 
           <select name="branch" onChange={handleChange}>
-           <option value="Computer">Computer</option>
-<option value="IT">IT</option>
-<option value="Civil">Civil</option>
-<option value="Mechanical">Mechanical</option>
-<option value="Chemical">Chemical</option>
-<option value="Plastic">Plastic</option>
-<option value="AIML">AIML</option>
-<option value="Computer Science">Computer Science</option>
-<option value="EXTC">EXTC</option>
-<option value="Electrical">Electrical</option>
+            <option value="">Branch</option>
+            <option value="Computer">Computer</option>
+            <option value="IT">IT</option>
+            <option value="Civil">Civil</option>
+            <option value="Mechanical">Mechanical</option>
+            <option value="Chemical">Chemical</option>
+            <option value="Plastic">Plastic</option>
+            <option value="AIML">AIML</option>
+            <option value="Computer Science">Computer Science</option>
+            <option value="EXTC">EXTC</option>
+            <option value="Electrical">Electrical</option>
           </select>
 
           <select name="studentCount" onChange={handleChange}>
@@ -146,12 +169,25 @@ function Register() {
             <option value="">Stall Type</option>
             <option value="Food">Food (₹300)</option>
             <option value="Game">Game (₹600)</option>
-            <option value="Both">Both (₹900)</option>
+            <option value="Both">Both (game + food) (₹900)</option>
             <option value="other">Other (₹300)</option>
           </select>
 
-          <input type="number" name="extraTables" placeholder="Extra Tables" min="0" onChange={handleChange} />
-          <input type="number" name="electricBoards" placeholder="Electric Boards" min="0" onChange={handleChange} />
+          <input
+            type="number"
+            name="extraTables"
+            placeholder="Extra Tables"
+            min="0"
+            onChange={handleChange}
+          />
+
+          <input
+            type="number"
+            name="electricBoards"
+            placeholder="Electric Boards"
+            min="0"
+            onChange={handleChange}
+          />
         </div>
 
         <div className="summary">
@@ -162,8 +198,12 @@ function Register() {
 
         <div className="terms-row">
           <label className="terms-container">
-            <input type="checkbox" name="terms" checked={form.terms} onChange={handleChange} />
-            <span className="checkmark"></span>
+            <input
+              type="checkbox"
+              name="terms"
+              checked={form.terms}
+              onChange={handleChange}
+            />
             <span className="terms-text">
               I accept all <b>terms & conditions</b>
             </span>
@@ -171,11 +211,7 @@ function Register() {
         </div>
 
         <div className="action-row">
-          <button
-            className="btn-primary"
-            onClick={submit}
-            disabled={loading}
-          >
+          <button className="btn-primary" onClick={submit} disabled={loading}>
             {loading ? "Submitting..." : "Submit Registration"}
           </button>
 
