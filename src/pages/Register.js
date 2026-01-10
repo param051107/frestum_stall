@@ -46,9 +46,9 @@ function Register() {
 
   const totalAmount = getBasePrice() + extraCharges;
 
-  // ✅ Submit (FIXED)
+  // ✅ Submit
   const submit = async () => {
-    if (loading) return; // ⛔ prevent double submit
+    if (loading) return; // prevent multiple clicks
     setLoading(true);
 
     // validations
@@ -111,20 +111,32 @@ function Register() {
       <div className="form-card">
         <div className="form-grid">
           <input name="name" placeholder="Name" onChange={handleChange} />
+
           <input
             name="phone"
             placeholder="Phone (10 digits)"
             maxLength={10}
             onChange={handleChange}
           />
+
           <input
             name="sapId"
             placeholder="SAP ID (11 digits)"
             maxLength={11}
             onChange={handleChange}
           />
-          <input name="semester" placeholder="Semester" onChange={handleChange} />
-          <input name="rollNo" placeholder="Roll No" onChange={handleChange} />
+
+          <input
+            name="semester"
+            placeholder="Semester"
+            onChange={handleChange}
+          />
+
+          <input
+            name="rollNo"
+            placeholder="Roll No"
+            onChange={handleChange}
+          />
 
           <select name="course" onChange={handleChange}>
             <option value="">Course</option>
@@ -169,6 +181,7 @@ function Register() {
             min="0"
             onChange={handleChange}
           />
+
           <input
             type="number"
             name="electricBoards"
@@ -178,12 +191,14 @@ function Register() {
           />
         </div>
 
+        {/* PRICE SUMMARY */}
         <div className="summary">
           💰 Base Price: ₹{getBasePrice()} <br />
           ➕ Extra Charges: ₹{extraCharges} <br />
           🪙 <b>Total Amount: ₹{totalAmount}</b>
         </div>
 
+        {/* ✅ TERMS CHECKBOX */}
         <div className="terms-row">
           <label className="terms-container">
             <input
@@ -192,12 +207,14 @@ function Register() {
               checked={form.terms}
               onChange={handleChange}
             />
+            <span className="custom-checkbox"></span>
             <span className="terms-text">
               I accept all <b>terms & conditions</b>
             </span>
           </label>
         </div>
 
+        {/* ACTION BUTTONS */}
         <div className="action-row">
           <button
             type="button"
