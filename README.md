@@ -68,3 +68,17 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+
+
+
+
+            <option value="CE">Computer</option>
+            <option value="IT">IT</option>
+            <option value="C">Civil</option>
+            <option value="MEC">mechnical</option>
+            <option value="CHM">Chemical</option>
+            <option value="PLA">Plastic</option>
+            <option value="AIML">AIML</option>
+            <option value="CSE">Computer science</option>
+
