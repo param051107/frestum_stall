@@ -190,19 +190,20 @@ function Register() {
         </div>
 
         {/* ✅ CHECKBOX – NOT REMOVED */}
-        <div className="terms-row">
-          <label className="terms-container">
-            <input
-              type="checkbox"
-              name="terms"
-              checked={form.terms}
-              onChange={handleChange}
-            />
-            <span className="terms-text">
-              I accept all <b>terms & conditions</b>
-            </span>
-          </label>
-        </div>
+       <div className="terms-row">
+  <label className="terms-container">
+    <input
+      type="checkbox"
+      name="terms"
+      checked={form.terms}
+      onChange={handleChange}
+    />
+    <span className="checkmark"></span>
+    <span className="terms-text">
+      I accept all <b>terms & conditions</b>
+    </span>
+  </label>
+</div>
 
         <div className="summary">
           💰 Base Price: ₹{getBasePrice()} <br />
