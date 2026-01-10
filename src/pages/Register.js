@@ -3,12 +3,10 @@ import { db } from "../config/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import "../App.css";
-import "./Thanks";
+import "./Thanks"
 
 function Register() {
   const navigate = useNavigate();
-
-  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -47,62 +45,56 @@ function Register() {
   const totalAmount = getBasePrice() + extraCharges;
 
   // ✅ Submit
-  const submit = async () => {
-    if (loading) return; // prevent multiple clicks
-    setLoading(true);
+ const submit = async () => {
+  // validations
+  if (
+    !form.name ||
+    !form.phone ||
+    !form.sapId ||
+    !form.semester ||
+    !form.rollNo ||
+    !form.course ||
+    !form.branch ||
+    !form.studentCount ||
+    !form.stallType
+  ) {
+    alert("All fields are required ❌");
+    return;
+  }
 
-    // validations
-    if (
-      !form.name ||
-      !form.phone ||
-      !form.sapId ||
-      !form.semester ||
-      !form.rollNo ||
-      !form.course ||
-      !form.branch ||
-      !form.studentCount ||
-      !form.stallType
-    ) {
-      alert("All fields are required ❌");
-      setLoading(false);
-      return;
-    }
+  if (form.phone.length !== 10) {
+    alert("Phone must be 10 digits");
+    return;
+  }
 
-    if (form.phone.length !== 10) {
-      alert("Phone must be 10 digits");
-      setLoading(false);
-      return;
-    }
+  if (form.sapId.length !== 11) {
+    alert("SAP ID must be 11 digits");
+    return;
+  }
 
-    if (form.sapId.length !== 11) {
-      alert("SAP ID must be 11 digits");
-      setLoading(false);
-      return;
-    }
+  if (!form.terms) {
+    alert("Accept terms & conditions");
+    return;
+  }
 
-    if (!form.terms) {
-      alert("Accept terms & conditions");
-      setLoading(false);
-      return;
-    }
+  try {
+    await addDoc(collection(db, "registrations"), {
+      ...form,
+      basePrice: getBasePrice(),
+      extraCharges,
+      totalAmount,
+      paid: false,
+      createdAt: new Date(),
+    });
 
-    try {
-      await addDoc(collection(db, "registrations"), {
-        ...form,
-        basePrice: getBasePrice(),
-        extraCharges,
-        totalAmount,
-        paid: false,
-        createdAt: new Date(),
-      });
+    console.log("✅ Registration saved");
+    navigate("/thanks");   // ✅ NAVIGATION IS HERE (CORRECT)
+  } catch (error) {
+    console.error("❌ Firestore Error:", error);
+    alert("Something went wrong. Try again.");
+  }
+};
 
-      navigate("/thanks");
-    } catch (error) {
-      console.error("❌ Firestore Error:", error);
-      alert("Something went wrong. Try again.");
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="App">
@@ -111,32 +103,10 @@ function Register() {
       <div className="form-card">
         <div className="form-grid">
           <input name="name" placeholder="Name" onChange={handleChange} />
-
-          <input
-            name="phone"
-            placeholder="Phone (10 digits)"
-            maxLength={10}
-            onChange={handleChange}
-          />
-
-          <input
-            name="sapId"
-            placeholder="SAP ID (11 digits)"
-            maxLength={11}
-            onChange={handleChange}
-          />
-
-          <input
-            name="semester"
-            placeholder="Semester"
-            onChange={handleChange}
-          />
-
-          <input
-            name="rollNo"
-            placeholder="Roll No"
-            onChange={handleChange}
-          />
+          <input name="phone" placeholder="Phone (10 digits)" maxLength={10} onChange={handleChange} />
+          <input name="sapId" placeholder="SAP ID (11 digits)" maxLength={11} onChange={handleChange} />
+          <input name="semester" placeholder="Semester" onChange={handleChange} />
+          <input name="rollNo" placeholder="Roll No" onChange={handleChange} />
 
           <select name="course" onChange={handleChange}>
             <option value="">Course</option>
@@ -154,8 +124,8 @@ function Register() {
             <option value="PLA">Plastic</option>
             <option value="AIML">AIML</option>
             <option value="CSE">Computer Science</option>
-            <option value="EXTC">EXTC</option>
-            <option value="EE">Electrical</option>
+              <option value="CSE">extc</option>
+                <option value="CSE">Electrical</option>
           </select>
 
           <select name="studentCount" onChange={handleChange}>
@@ -170,66 +140,37 @@ function Register() {
             <option value="">Stall Type</option>
             <option value="Food">Food (₹300)</option>
             <option value="Game">Game (₹600)</option>
+           
             <option value="Both">Both (₹900)</option>
-            <option value="other">Other (₹300)</option>
+             <option value="other">other (₹300)</option>
           </select>
 
-          <input
-            type="number"
-            name="extraTables"
-            placeholder="Extra Tables"
-            min="0"
-            onChange={handleChange}
-          />
-
-          <input
-            type="number"
-            name="electricBoards"
-            placeholder="Electric Boards"
-            min="0"
-            onChange={handleChange}
-          />
+          <input type="number" name="extraTables" placeholder="Extra Tables" min="0" onChange={handleChange} />
+          <input type="number" name="electricBoards" placeholder="Electric Boards" min="0" onChange={handleChange} />
         </div>
 
-        {/* PRICE SUMMARY */}
         <div className="summary">
           💰 Base Price: ₹{getBasePrice()} <br />
           ➕ Extra Charges: ₹{extraCharges} <br />
           🪙 <b>Total Amount: ₹{totalAmount}</b>
         </div>
 
-        {/* ✅ TERMS CHECKBOX */}
         <div className="terms-row">
           <label className="terms-container">
-            <input
-              type="checkbox"
-              name="terms"
-              checked={form.terms}
-              onChange={handleChange}
-            />
-            <span className="custom-checkbox"></span>
+            <input type="checkbox" name="terms" checked={form.terms} onChange={handleChange} />
+            <span className="checkmark"></span>
             <span className="terms-text">
               I accept all <b>terms & conditions</b>
             </span>
           </label>
         </div>
 
-        {/* ACTION BUTTONS */}
         <div className="action-row">
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={submit}
-            disabled={loading}
-          >
-            {loading ? "Submitting..." : "Submit Registration"}
+          <button className="btn-primary" onClick={submit }>
+            Submit Registration
           </button>
 
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => navigate("/")}
-          >
+          <button className="btn-secondary" onClick={() => navigate("/")}>
             ⬅ Back to Welcome
           </button>
         </div>
