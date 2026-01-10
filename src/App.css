@@ -354,6 +354,31 @@ button {
   }
 }
 
+.terms-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 10px;
+  color: white;
+}
+
+.terms-container input {
+  position: absolute;
+  opacity: 0;
+}
+
+.checkmark {
+  height: 18px;
+  width: 18px;
+  border: 2px solid #00e5ff;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.terms-container input:checked + .checkmark {
+  background-color: #00e5ff;
+}
+
 /* Ensure card stays above balloons */
 .form-card {
   position: relative;
