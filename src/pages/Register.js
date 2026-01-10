@@ -122,17 +122,16 @@ function Register() {
           </select>
 
           <select name="branch" onChange={handleChange}>
-            <option value="">Branch</option>
-            <option value="CE">Computer</option>
-            <option value="IT">IT</option>
-            <option value="C">Civil</option>
-            <option value="MEC">Mechanical</option>
-            <option value="CHM">Chemical</option>
-            <option value="PLA">Plastic</option>
-            <option value="AIML">AIML</option>
-            <option value="CSE">Computer Science</option>
-            <option value="EXTC">EXTC</option>
-            <option value="ELE">Electrical</option>
+           <option value="Computer">Computer</option>
+<option value="IT">IT</option>
+<option value="Civil">Civil</option>
+<option value="Mechanical">Mechanical</option>
+<option value="Chemical">Chemical</option>
+<option value="Plastic">Plastic</option>
+<option value="AIML">AIML</option>
+<option value="Computer Science">Computer Science</option>
+<option value="EXTC">EXTC</option>
+<option value="Electrical">Electrical</option>
           </select>
 
           <select name="studentCount" onChange={handleChange}>
