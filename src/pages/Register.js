@@ -24,9 +24,21 @@ function Register() {
     terms: false,
   });
 
-  // 🔁 Handle input (checkbox & number safe)
+  /* ================= INPUT HANDLER ================= */
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    // 🔒 Reset extras when stall type changes
+    if (name === "stallType") {
+      setForm({
+        ...form,
+        stallType: value,
+        extraTables: 0,
+        electricBoards: 0,
+      });
+      return;
+    }
 
     setForm({
       ...form,
@@ -39,9 +51,8 @@ function Register() {
     });
   };
 
-  /* ================= PRICE LOGIC (PROPER & LOCKED) ================= */
+  /* ================= PRICE LOGIC (LOCKED) ================= */
 
-  // 💰 Stall base prices
   const stallPrices = {
     Food: 300,
     Game: 600,
@@ -49,15 +60,17 @@ function Register() {
     other: 300,
   };
 
-  const getBasePrice = () => stallPrices[form.stallType] || 0;
+  const getBasePrice = (stall) => stallPrices[stall] || 0;
 
-  // ➕ Extra charges (₹150 each)
-  const extraCharges =
-    Number(form.extraTables) * 150 +
-    Number(form.electricBoards) * 150;
+  const getExtraCharges = (tables, boards) =>
+    Number(tables) * 150 + Number(boards) * 150;
 
-  // 🪙 Total amount
-  const totalAmount = getBasePrice() + extraCharges;
+  const basePrice = getBasePrice(form.stallType);
+  const extraCharges = getExtraCharges(
+    form.extraTables,
+    form.electricBoards
+  );
+  const totalAmount = basePrice + extraCharges;
 
   /* ================= SUBMIT ================= */
 
@@ -94,14 +107,24 @@ function Register() {
       return;
     }
 
+    // 🔐 FINAL recalculation before saving (MOST IMPORTANT)
+    const finalBase = getBasePrice(form.stallType);
+    const finalExtras = getExtraCharges(
+      form.extraTables,
+      form.electricBoards
+    );
+    const finalTotal = finalBase + finalExtras;
+
     try {
       setLoading(true);
 
       await addDoc(collection(db, "registrations"), {
         ...form,
-        basePrice: getBasePrice(),
-        extraCharges,
-        totalAmount,
+        extraTables: Number(form.extraTables),
+        electricBoards: Number(form.electricBoards),
+        basePrice: finalBase,
+        extraCharges: finalExtras,
+        totalAmount: finalTotal,
         paid: false,
         createdAt: serverTimestamp(),
       });
@@ -125,21 +148,8 @@ function Register() {
       <div className="form-card">
         <div className="form-grid">
           <input name="name" placeholder="Name" onChange={handleChange} />
-
-          <input
-            name="phone"
-            placeholder="Phone (10 digits)"
-            maxLength={10}
-            onChange={handleChange}
-          />
-
-          <input
-            name="sapId"
-            placeholder="SAP ID (11 digits)"
-            maxLength={11}
-            onChange={handleChange}
-          />
-
+          <input name="phone" placeholder="Phone (10 digits)" maxLength={10} onChange={handleChange} />
+          <input name="sapId" placeholder="SAP ID (11 digits)" maxLength={11} onChange={handleChange} />
           <input name="semester" placeholder="Semester" onChange={handleChange} />
           <input name="rollNo" placeholder="Roll No" onChange={handleChange} />
 
@@ -179,42 +189,22 @@ function Register() {
             <option value="other">Other (₹300)</option>
           </select>
 
-          <input
-            type="number"
-            name="extraTables"
-            placeholder="Extra Tables"
-            min="0"
-            onChange={handleChange}
-          />
-
-          <input
-            type="number"
-            name="electricBoards"
-            placeholder="Electric Boards"
-            min="0"
-            onChange={handleChange}
-          />
+          <input type="number" name="extraTables" placeholder="Extra Tables" min="0" onChange={handleChange} />
+          <input type="number" name="electricBoards" placeholder="Electric Boards" min="0" onChange={handleChange} />
         </div>
 
-        {/* ✅ Checkbox */}
         <div className="terms-row">
           <label className="terms-container">
-            <input
-              type="checkbox"
-              name="terms"
-              checked={form.terms}
-              onChange={handleChange}
-            />
+            <input type="checkbox" name="terms" checked={form.terms} onChange={handleChange} />
             <span className="checkmark"></span>
-            <span className="terms-text">
+            <span className="terms-text "  style={{ color: "#000000" }}>
               I accept all <b>terms & conditions</b>
             </span>
           </label>
         </div>
 
-        {/* ✅ Price Summary */}
         <div className="summary">
-          💰 Base Price: ₹{getBasePrice()} <br />
+          💰 Base Price: ₹{basePrice} <br />
           ➕ Extra Charges: ₹{extraCharges} <br />
           🪙 <b>Total Amount: ₹{totalAmount}</b>
         </div>
@@ -224,11 +214,7 @@ function Register() {
             {loading ? "Submitting..." : "Submit Registration"}
           </button>
 
-          <button
-            className="btn-secondary"
-            onClick={() => navigate("/")}
-            disabled={loading}
-          >
+          <button className="btn-secondary" onClick={() => navigate("/")} disabled={loading}>
             ⬅ Back to Welcome
           </button>
         </div>
