@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { db } from "../config/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import "../App.css";
-import "./Thanks"
+import "./Thanks";
 
 function Register() {
   const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -44,57 +46,62 @@ function Register() {
 
   const totalAmount = getBasePrice() + extraCharges;
 
-  // ✅ Submit
- const submit = async () => {
-  // validations
-  if (
-    !form.name ||
-    !form.phone ||
-    !form.sapId ||
-    !form.semester ||
-    !form.rollNo ||
-    !form.course ||
-    !form.branch ||
-    !form.studentCount ||
-    !form.stallType
-  ) {
-    alert("All fields are required ❌");
-    return;
-  }
+  // ✅ Submit (SAFE)
+  const submit = async () => {
+    if (loading) return; // ⛔ prevent double click
 
-  if (form.phone.length !== 10) {
-    alert("Phone must be 10 digits");
-    return;
-  }
+    // 🔐 validations
+    if (
+      !form.name ||
+      !form.phone ||
+      !form.sapId ||
+      !form.semester ||
+      !form.rollNo ||
+      !form.course ||
+      !form.branch ||
+      !form.studentCount ||
+      !form.stallType
+    ) {
+      alert("All fields are required ❌");
+      return;
+    }
 
-  if (form.sapId.length !== 11) {
-    alert("SAP ID must be 11 digits");
-    return;
-  }
+    if (form.phone.length !== 10) {
+      alert("Phone must be 10 digits");
+      return;
+    }
 
-  if (!form.terms) {
-    alert("Accept terms & conditions");
-    return;
-  }
+    if (form.sapId.length !== 11) {
+      alert("SAP ID must be 11 digits");
+      return;
+    }
 
-  try {
-    await addDoc(collection(db, "registrations"), {
-      ...form,
-      basePrice: getBasePrice(),
-      extraCharges,
-      totalAmount,
-      paid: false,
-      createdAt: new Date(),
-    });
+    if (!form.terms) {
+      alert("Accept terms & conditions");
+      return;
+    }
 
-    console.log("✅ Registration saved");
-    navigate("/thanks");   // ✅ NAVIGATION IS HERE (CORRECT)
-  } catch (error) {
-    console.error("❌ Firestore Error:", error);
-    alert("Something went wrong. Try again.");
-  }
-};
+    try {
+      setLoading(true); // 🔒 LOCK
 
+      await addDoc(collection(db, "registrations"), {
+        ...form,
+        basePrice: getBasePrice(),
+        extraCharges,
+        totalAmount,
+        paid: false,
+        createdAt: serverTimestamp(),
+      });
+
+      alert("Registration successful ✅");
+      navigate("/thanks");
+    } catch (error) {
+      console.error("❌ Firestore Error:", error);
+      alert("Something went wrong. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="App">
@@ -124,8 +131,8 @@ function Register() {
             <option value="PLA">Plastic</option>
             <option value="AIML">AIML</option>
             <option value="CSE">Computer Science</option>
-              <option value="CSE">extc</option>
-                <option value="CSE">Electrical</option>
+            <option value="EXTC">EXTC</option>
+            <option value="ELE">Electrical</option>
           </select>
 
           <select name="studentCount" onChange={handleChange}>
@@ -140,9 +147,8 @@ function Register() {
             <option value="">Stall Type</option>
             <option value="Food">Food (₹300)</option>
             <option value="Game">Game (₹600)</option>
-           
             <option value="Both">Both (₹900)</option>
-             <option value="other">other (₹300)</option>
+            <option value="other">Other (₹300)</option>
           </select>
 
           <input type="number" name="extraTables" placeholder="Extra Tables" min="0" onChange={handleChange} />
@@ -166,11 +172,19 @@ function Register() {
         </div>
 
         <div className="action-row">
-          <button className="btn-primary" onClick={submit }>
-            Submit Registration
+          <button
+            className="btn-primary"
+            onClick={submit}
+            disabled={loading}
+          >
+            {loading ? "Submitting..." : "Submit Registration"}
           </button>
 
-          <button className="btn-secondary" onClick={() => navigate("/")}>
+          <button
+            className="btn-secondary"
+            onClick={() => navigate("/")}
+            disabled={loading}
+          >
             ⬅ Back to Welcome
           </button>
         </div>
