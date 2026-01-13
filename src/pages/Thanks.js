@@ -9,7 +9,7 @@ function Thanks() {
         <h2>Registration Successful ✅</h2>
 
         <p style={{ marginTop: 20 }}>
-          💰 Please pay the amount at the desk.
+          💰 Please pay cash or gpay on desk
         </p>
 
         <p>
