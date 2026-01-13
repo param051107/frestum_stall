@@ -4,7 +4,6 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import "../App.css";
 
-/* ================= PRICES ================= */
 const PRICES = {
   Ground: {
     FOOD_1: 600,
@@ -24,7 +23,6 @@ const PRICES = {
 
 function Register() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -35,23 +33,18 @@ function Register() {
     course: "",
     branch: "",
     stallType: "",
-    location: "",
     stallName: "",
+    location: "",
     electric: false,
     terms: false,
   });
 
-  /* ================= INPUT HANDLER ================= */
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm({
-      ...form,
-      [name]: type === "checkbox" ? checked : value,
-    });
+    setForm({ ...form, [name]: type === "checkbox" ? checked : value });
   };
 
-  /* ================= STALL NAME LABEL ================= */
-  const getStallNameLabel = () => {
+  const getStallLabel = () => {
     if (form.stallType === "GAME") return "Game Name";
     if (form.stallType === "FOOD_1" || form.stallType === "FOOD_2")
       return "Food Item Name";
@@ -59,107 +52,32 @@ function Register() {
     return "";
   };
 
-  /* ================= PRICE CALC ================= */
-  const calculatePrices = () => {
-    let basePrice = 0;
-
+  const calculateTotal = () => {
+    let base = 0;
     if (form.stallType === "TREASURE") {
-      basePrice = PRICES.TREASURE;
+      base = PRICES.TREASURE;
     } else if (form.location) {
-      basePrice = PRICES[form.location]?.[form.stallType] || 0;
+      base = PRICES[form.location]?.[form.stallType] || 0;
     }
-
-    const electricCharge = form.electric ? PRICES.ELECTRIC : 0;
-
-    return {
-      basePrice,
-      electricCharge,
-      totalAmount: basePrice + electricCharge,
-    };
+    return base + (form.electric ? PRICES.ELECTRIC : 0);
   };
 
-  /* ================= SUBMIT ================= */
   const submit = async () => {
-    if (loading) return;
-
-    const required = [
-      "name",
-      "phone",
-      "sapId",
-      "semester",
-      "rollNo",
-      "course",
-      "branch",
-      "stallType",
-    ];
-
-    for (let field of required) {
-      if (!form[field]) {
-        alert(`Please fill ${field}`);
-        return;
-      }
-    }
-
-    if (form.phone.length !== 10 || !/^\d+$/.test(form.phone)) {
-      alert("Phone must be 10 digits");
-      return;
-    }
-
-    if (form.sapId.length !== 11 || !/^\d+$/.test(form.sapId)) {
-      alert("SAP ID must be 11 digits");
-      return;
-    }
-
-    if (form.stallType !== "TREASURE" && !form.location) {
-      alert("Please select location");
-      return;
-    }
-
-    if (form.stallType !== "TREASURE" && !form.stallName.trim()) {
-      alert("Please enter stall details");
-      return;
-    }
-
     if (!form.terms) {
-      alert("Accept Festum rules");
+      alert("Accept terms & conditions");
       return;
     }
 
-    const prices = calculatePrices();
-
-    const data = {
-      name: form.name.trim(),
-      phone: form.phone,
-      sapId: form.sapId,
-      semester: form.semester,
-      rollNo: form.rollNo,
-      course: form.course,
-      branch: form.branch,
-      stallType: form.stallType,
-      stallName: form.stallName || "N/A",
-      location: form.location || "N/A",
-      electric: form.electric,
-      totalAmount: prices.totalAmount,
+    await addDoc(collection(db, "registrations"), {
+      ...form,
+      totalAmount: calculateTotal(),
       paid: false,
       createdAt: serverTimestamp(),
-    };
+    });
 
-    try {
-      setLoading(true);
-      await addDoc(collection(db, "registrations"), data);
-      alert("Registration Successful");
-      navigate("/thanks");
-    } catch (err) {
-      console.error(err);
-      alert("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    navigate("/thanks");
   };
 
-  const prices = calculatePrices();
-
-  /* ================= UI ================= */
   return (
     <div className="App">
       <h1>Festum Registration</h1>
@@ -169,29 +87,29 @@ function Register() {
         <div className="section">
           <div className="section-title">Student Details</div>
           <div className="form-grid">
-            <input name="name" placeholder="Name" value={form.name} onChange={handleChange} />
-            <input name="phone" placeholder="Phone (10 digits)" maxLength={10} value={form.phone} onChange={handleChange} />
-            <input name="sapId" placeholder="SAP ID (11 digits)" maxLength={11} value={form.sapId} onChange={handleChange} />
-            <input name="semester" placeholder="Semester" value={form.semester} onChange={handleChange} />
-            <input name="rollNo" placeholder="Roll No" value={form.rollNo} onChange={handleChange} />
+            <input name="name" placeholder="Name" onChange={handleChange} />
+            <input name="phone" placeholder="Phone (10 digits)" onChange={handleChange} />
+            <input name="sapId" placeholder="SAP ID (11 digits)" onChange={handleChange} />
+            <input name="semester" placeholder="Semester" onChange={handleChange} />
+            <input name="rollNo" placeholder="Roll No" onChange={handleChange} />
 
-            <select name="course" value={form.course} onChange={handleChange}>
+            <select name="course" onChange={handleChange}>
               <option value="">Course</option>
               <option value="Diploma">Diploma</option>
               <option value="Degree">Degree</option>
             </select>
 
-            <select name="branch" value={form.branch} onChange={handleChange}>
+            <select name="branch" onChange={handleChange}>
               <option value="">Branch</option>
               <option value="Computer Engineering">Computer Engineering</option>
-              <option value="Information Technology">Information Technology</option>
+              <option value="IT">IT</option>
+              <option value="Computer science">Computer science Engineering</option>
+              <option value="EXTC">EXTC</option>
               <option value="Civil">Civil</option>
               <option value="Mechanical">Mechanical</option>
               <option value="Chemical">Chemical</option>
-              <option value="Plastic">Plastic</option>
-              <option value="AIML">AI & ML</option>
-              <option value=">Computer science">Computer science</option>
-              <option value="EXTC">EXTC</option>
+              <option value="plastic">Plastic</option>
+              <option value="AIML">AIML</option>
               <option value="Electrical">Electrical</option>
             </select>
           </div>
@@ -200,18 +118,19 @@ function Register() {
         {/* STALL DETAILS */}
         <div className="section">
           <div className="section-title">Stall Details</div>
+
           <div className="form-grid">
-            <select name="stallType" value={form.stallType} onChange={handleChange}>
+            <select name="stallType" onChange={handleChange}>
               <option value="">Stall Type</option>
-              <option value="FOOD_1(3)">1 Food Stall (3 members)</option>
-              <option value="FOOD_2(3+1)">2 Food Stalls (3+1)</option>
-              <option value="GAME(2)">Game Stall (2 members)</option>
+              <option value="FOOD_1(3)">1 Food Stall(3 member)</option>
+              <option value="FOOD_2(3+1)">2 Food Stalls(3+1)</option>
+              <option value="GAME(2)">Game Stall(2 member)</option>
               <option value="OTHER">Other Stall</option>
-              <option value="TREASURE">Treasure Hunt (5 members)</option>
+              <option value="TREASURE">Treasure Hunt(5 member)</option>
             </select>
 
             {form.stallType !== "TREASURE" && (
-              <select name="location" value={form.location} onChange={handleChange}>
+              <select name="location" onChange={handleChange}>
                 <option value="">Location</option>
                 <option value="Ground">Ground</option>
                 <option value="Basement">Upper Basement</option>
@@ -220,52 +139,35 @@ function Register() {
           </div>
 
           {form.stallType && form.stallType !== "TREASURE" && (
-            <div className="form-group full-width">
-              <label>{getStallNameLabel()}</label>
-              <input
-                name="stallName"
-                placeholder={`Enter ${getStallNameLabel()}`}
-                value={form.stallName}
-                onChange={handleChange}
-              />
-            </div>
+            <input
+              className="full-width"
+              name="stallName"
+              placeholder={getStallLabel()}
+              onChange={handleChange}
+            />
           )}
 
           {form.stallType !== "TREASURE" && (
-          <label className="checkbox-row">
-  <input
-    type="checkbox"
-    name="electric"
-    checked={form.electric}
-    onChange={handleChange}
-  />
-  <span>Electric Plug Point Required (₹350)</span>
-</label>
-
+            <label className="checkbox-row">
+              <input type="checkbox" name="electric" onChange={handleChange} />
+              <span>Electric Plug Point Required (₹350)</span>
+            </label>
           )}
         </div>
 
-        {/* AMOUNT SUMMARY */}
+        {/* SUMMARY */}
         <div className="summary">
           <h3>Amount Summary</h3>
-          <p>Base Price: ₹{prices.basePrice}</p>
-          {form.electric && <p>Electric Charge: ₹{prices.electricCharge}</p>}
-          <h2>Total: ₹{prices.totalAmount}</h2>
+          <h2>Total: ₹{calculateTotal()}</h2>
         </div>
 
-        {/* TERMS */}
-       <label className="checkbox-row">
-  <input
-    type="checkbox"
-    name="terms"
-    checked={form.terms}
-    onChange={handleChange}
-  />
-  <span>I accept all Festum rules & conditions</span>
-</label>
+        <label className="checkbox-row">
+          <input type="checkbox" name="terms" onChange={handleChange} />
+          <span>I accept all Festum rules & conditions</span>
+        </label>
 
-        <button className="submit-btn" onClick={submit} disabled={loading}>
-          {loading ? "Submitting..." : "Submit Registration"}
+        <button className="submit-btn" onClick={submit}>
+          Submit Registration
         </button>
       </div>
     </div>
