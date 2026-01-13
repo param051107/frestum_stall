@@ -2,8 +2,8 @@ import { useState } from "react";
 import { db } from "../config/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import "../App.css";
 
+/* ================= PRICES ================= */
 const PRICES = {
   Ground: {
     FOOD_1: 600,
@@ -39,11 +39,29 @@ function Register() {
     terms: false,
   });
 
+  /* ================= INPUT HANDLER ================= */
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm({ ...form, [name]: type === "checkbox" ? checked : value });
+
+    // Reset location & electric for Treasure Hunt
+    if (name === "stallType" && value === "TREASURE") {
+      setForm({
+        ...form,
+        stallType: value,
+        location: "",
+        electric: false,
+        stallName: "",
+      });
+      return;
+    }
+
+    setForm({
+      ...form,
+      [name]: type === "checkbox" ? checked : value,
+    });
   };
 
+  /* ================= STALL LABEL ================= */
   const getStallLabel = () => {
     if (form.stallType === "GAME") return "Game Name";
     if (form.stallType === "FOOD_1" || form.stallType === "FOOD_2")
@@ -52,25 +70,47 @@ function Register() {
     return "";
   };
 
-  const calculateTotal = () => {
-    let base = 0;
+  /* ================= PRICE LOGIC ================= */
+  const getStallPrice = () => {
+    if (!form.stallType) return 0;
+
     if (form.stallType === "TREASURE") {
-      base = PRICES.TREASURE;
-    } else if (form.location) {
-      base = PRICES[form.location]?.[form.stallType] || 0;
+      return PRICES.TREASURE;
     }
-    return base + (form.electric ? PRICES.ELECTRIC : 0);
+
+    if (!form.location) return 0;
+
+    return PRICES[form.location]?.[form.stallType] || 0;
   };
 
+  const stallPrice = getStallPrice();
+  const electricPrice = form.electric ? PRICES.ELECTRIC : 0;
+  const totalAmount = stallPrice + electricPrice;
+
+  /* ================= SUBMIT ================= */
   const submit = async () => {
+    if (
+      !form.name ||
+      !form.phone ||
+      !form.sapId ||
+      !form.course ||
+      !form.branch ||
+      !form.stallType
+    ) {
+      alert("Please fill all required fields");
+      return;
+    }
+
     if (!form.terms) {
-      alert("Accept terms & conditions");
+      alert("Please accept terms & conditions");
       return;
     }
 
     await addDoc(collection(db, "registrations"), {
       ...form,
-      totalAmount: calculateTotal(),
+      stallPrice,
+      electricPrice,
+      totalAmount,
       paid: false,
       createdAt: serverTimestamp(),
     });
@@ -78,95 +118,192 @@ function Register() {
     navigate("/thanks");
   };
 
+  /* ================= UI ================= */
   return (
-    <div className="App">
-      <h1>Festum Registration</h1>
+    <div style={{ minHeight: "100vh", padding: 16, background: "#f8fafc" }}>
+      <h1 style={{ textAlign: "center", color: "#2563eb" }}>
+        Festum Registration
+      </h1>
 
-      <div className="form-card">
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: "auto",
+          background: "#fff",
+          border: "2px solid #2563eb",
+          borderRadius: 16,
+          padding: 24,
+        }}
+      >
         {/* STUDENT DETAILS */}
-        <div className="section">
-          <div className="section-title">Student Details</div>
-          <div className="form-grid">
-            <input name="name" placeholder="Name" onChange={handleChange} />
-            <input name="phone" placeholder="Phone (10 digits)" onChange={handleChange} />
-            <input name="sapId" placeholder="SAP ID (11 digits)" onChange={handleChange} />
-            <input name="semester" placeholder="Semester" onChange={handleChange} />
-            <input name="rollNo" placeholder="Roll No" onChange={handleChange} />
+        <h3>Student Details</h3>
 
-            <select name="course" onChange={handleChange}>
-              <option value="">Course</option>
-              <option value="Diploma">Diploma</option>
-              <option value="Degree">Degree</option>
-            </select>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 16,
+          }}
+        >
+          <input name="name" placeholder="Name" onChange={handleChange} />
+          <input name="phone" placeholder="Phone (10 digits)" onChange={handleChange} />
+          <input name="sapId" placeholder="SAP ID (11 digits)" onChange={handleChange} />
+          <input name="semester" placeholder="Semester" onChange={handleChange} />
+          <input name="rollNo" placeholder="Roll No" onChange={handleChange} />
 
-            <select name="branch" onChange={handleChange}>
-              <option value="">Branch</option>
-              <option value="Computer Engineering">Computer Engineering</option>
-              <option value="IT">IT</option>
-              <option value="Computer science">Computer science Engineering</option>
-              <option value="EXTC">EXTC</option>
-              <option value="Civil">Civil</option>
-              <option value="Mechanical">Mechanical</option>
-              <option value="Chemical">Chemical</option>
-              <option value="plastic">Plastic</option>
-              <option value="AIML">AIML</option>
-              <option value="Electrical">Electrical</option>
-            </select>
-          </div>
+          <select name="course" onChange={handleChange}>
+            <option value="">Course</option>
+            <option value="Diploma">Diploma</option>
+            <option value="Degree">Degree</option>
+          </select>
+
+          <select name="branch" onChange={handleChange}>
+            <option value="">Branch</option>
+            <option value="Computer Engineering">Computer Engineering</option>
+            <option value="IT">IT</option>
+            <option value="CSE">Computer Science</option>
+            <option value="EXTC">EXTC</option>
+            <option value="Civil">Civil</option>
+            <option value="Mechanical">Mechanical</option>
+            <option value="Chemical">Chemical</option>
+            <option value="Plastic">Plastic</option>
+            <option value="AIML">AIML</option>
+            <option value="Electrical">Electrical</option>
+          </select>
         </div>
 
         {/* STALL DETAILS */}
-        <div className="section">
-          <div className="section-title">Stall Details</div>
+        <h3 style={{ marginTop: 24 }}>Stall Details</h3>
 
-          <div className="form-grid">
-            <select name="stallType" onChange={handleChange}>
-              <option value="">Stall Type</option>
-              <option value="FOOD_1(3)">1 Food Stall(3 member)</option>
-              <option value="FOOD_2(3+1)">2 Food Stalls(3+1)</option>
-              <option value="GAME(2)">Game Stall(2 member)</option>
-              <option value="OTHER">Other Stall</option>
-              <option value="TREASURE">Treasure Hunt(5 member)</option>
-            </select>
-
-            {form.stallType !== "TREASURE" && (
-              <select name="location" onChange={handleChange}>
-                <option value="">Location</option>
-                <option value="Ground">Ground</option>
-                <option value="Basement">Upper Basement</option>
-              </select>
-            )}
-          </div>
-
-          {form.stallType && form.stallType !== "TREASURE" && (
-            <input
-              className="full-width"
-              name="stallName"
-              placeholder={getStallLabel()}
-              onChange={handleChange}
-            />
-          )}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 16,
+          }}
+        >
+          <select name="stallType" value={form.stallType} onChange={handleChange}>
+            <option value="">Stall Type</option>
+            <option value="FOOD_1">1 Food Stall (3 members)</option>
+            <option value="FOOD_2">2 Food Stalls (3+1 members)</option>
+            <option value="GAME">Game Stall (2 members)</option>
+            <option value="OTHER">Other Stall</option>
+            <option value="TREASURE">Treasure Hunt (5 members)</option>
+          </select>
 
           {form.stallType !== "TREASURE" && (
-            <label className="checkbox-row">
-              <input type="checkbox" name="electric" onChange={handleChange} />
-              <span>Electric Plug Point Required (₹350)</span>
-            </label>
+            <select name="location" value={form.location} onChange={handleChange}>
+              <option value="">Location</option>
+              <option value="Ground">Ground</option>
+              <option value="Basement">Upper Basement</option>
+            </select>
           )}
         </div>
 
-        {/* SUMMARY */}
-        <div className="summary">
+        {form.stallType && form.stallType !== "TREASURE" && (
+          <input
+            style={{ width: "100%", marginTop: 12 }}
+            placeholder={getStallLabel()}
+            name="stallName"
+            onChange={handleChange}
+          />
+        )}
+
+        {form.stallType !== "TREASURE" && (
+          <label
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: 12,
+              fontSize: 15,
+            }}
+          >
+            <span>Electric Plug Point Required (₹350)</span>
+            <input
+              type="checkbox"
+              name="electric"
+              checked={form.electric}
+              onChange={handleChange}
+              style={{ width: 18, height: 18 }}
+            />
+          </label>
+        )}
+
+        {/* AMOUNT SUMMARY */}
+        <div
+          style={{
+            marginTop: 24,
+            padding: 20,
+            border: "2px dashed #2563eb",
+            borderRadius: 16,
+            background: "#f8fafc",
+          }}
+        >
           <h3>Amount Summary</h3>
-          <h2>Total: ₹{calculateTotal()}</h2>
+
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span>Stall Price</span>
+            <span>₹{stallPrice}</span>
+          </div>
+
+          {form.electric && (
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>Electric Plug Point</span>
+              <span>₹{electricPrice}</span>
+            </div>
+          )}
+
+          <hr />
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: 18,
+              fontWeight: 700,
+              color: "#2563eb",
+            }}
+          >
+            <span>Total Amount</span>
+            <span>₹{totalAmount}</span>
+          </div>
         </div>
 
-        <label className="checkbox-row">
-          <input type="checkbox" name="terms" onChange={handleChange} />
-          <span>I accept all Festum rules & conditions</span>
+        {/* TERMS */}
+        <label
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 10,
+            marginTop: 20,
+          }}
+        >
+          <input
+            type="checkbox"
+            name="terms"
+            checked={form.terms}
+            onChange={handleChange}
+            style={{ width: 18, height: 18 }}
+          />
+          I accept all Festum rules & conditions
         </label>
 
-        <button className="submit-btn" onClick={submit}>
+        <button
+          onClick={submit}
+          style={{
+            marginTop: 24,
+            width: "100%",
+            padding: 14,
+            borderRadius: 14,
+            border: "none",
+            background: "#2563eb",
+            color: "#fff",
+            fontSize: 16,
+            cursor: "pointer",
+          }}
+        >
           Submit Registration
         </button>
       </div>
