@@ -6,17 +6,31 @@ import "../App.css";
 
 function Login() {
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const login = async () => {
-    const ref = doc(db, "admin", "config");
-    const snap = await getDoc(ref);
+    if (!password) {
+      alert("Please enter password");
+      return;
+    }
 
-    if (snap.exists() && password === snap.data().password) {
-      sessionStorage.setItem("admin", "true");
-      navigate("/students");
-    } else {
-      alert("Wrong password ❌");
+    try {
+      setLoading(true);
+      const ref = doc(db, "admin", "config");
+      const snap = await getDoc(ref);
+
+      if (snap.exists() && password === snap.data().password) {
+        sessionStorage.setItem("admin", "true");
+        navigate("/students");
+      } else {
+        alert("Wrong password ❌");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -30,17 +44,22 @@ function Login() {
           placeholder="Enter Admin Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          disabled={loading}
         />
 
         <div className="action-row">
-          <button className="btn-primary" onClick={login}>
-            Login
+          <button
+            className="btn-primary"
+            onClick={login}
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Login"}
           </button>
 
-          {/* 👈 BACK TO CULTURE PAGE */}
           <button
             className="btn-secondary"
             onClick={() => navigate("/culture")}
+            disabled={loading}
           >
             ⬅ Back to Culture
           </button>
