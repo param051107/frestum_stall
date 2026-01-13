@@ -3,7 +3,24 @@ import { db } from "../config/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import "../App.css";
-import "./Thanks";
+
+/* ================= PRICES ================= */
+const PRICES = {
+  Ground: {
+    FOOD_1: 600,
+    FOOD_2: 1100,
+    GAME: 1000,
+    OTHER: 1000,
+  },
+  Basement: {
+    FOOD_1: 500,
+    FOOD_2: 900,
+    GAME: 700,
+    OTHER: 700,
+  },
+  ELECTRIC: 350,
+  TREASURE: 500,
+};
 
 function Register() {
   const navigate = useNavigate();
@@ -17,207 +34,239 @@ function Register() {
     rollNo: "",
     course: "",
     branch: "",
-    studentCount: "",
     stallType: "",
-    extraTables: 0,
-    electricBoards: 0,
+    location: "",
+    stallName: "",
+    electric: false,
     terms: false,
   });
 
   /* ================= INPUT HANDLER ================= */
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
-    // 🔒 Reset extras when stall type changes
-    if (name === "stallType") {
-      setForm({
-        ...form,
-        stallType: value,
-        extraTables: 0,
-        electricBoards: 0,
-      });
-      return;
-    }
-
     setForm({
       ...form,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : type === "number"
-          ? Number(value)
-          : value,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
-  /* ================= PRICE LOGIC (LOCKED) ================= */
-
-  const stallPrices = {
-    Food: 300,
-    Game: 600,
-    Both: 900,
-    other: 300,
+  /* ================= STALL NAME LABEL ================= */
+  const getStallNameLabel = () => {
+    if (form.stallType === "GAME") return "Game Name";
+    if (form.stallType === "FOOD_1" || form.stallType === "FOOD_2")
+      return "Food Item Name";
+    if (form.stallType === "OTHER") return "Stall Description";
+    return "";
   };
 
-  const getBasePrice = (stall) => stallPrices[stall] || 0;
+  /* ================= PRICE CALC ================= */
+  const calculatePrices = () => {
+    let basePrice = 0;
 
-  const getExtraCharges = (tables, boards) =>
-    Number(tables) * 150 + Number(boards) * 150;
+    if (form.stallType === "TREASURE") {
+      basePrice = PRICES.TREASURE;
+    } else if (form.location) {
+      basePrice = PRICES[form.location]?.[form.stallType] || 0;
+    }
 
-  const basePrice = getBasePrice(form.stallType);
-  const extraCharges = getExtraCharges(
-    form.extraTables,
-    form.electricBoards
-  );
-  const totalAmount = basePrice + extraCharges;
+    const electricCharge = form.electric ? PRICES.ELECTRIC : 0;
+
+    return {
+      basePrice,
+      electricCharge,
+      totalAmount: basePrice + electricCharge,
+    };
+  };
 
   /* ================= SUBMIT ================= */
-
   const submit = async () => {
     if (loading) return;
 
-    if (
-      !form.name ||
-      !form.phone ||
-      !form.sapId ||
-      !form.semester ||
-      !form.rollNo ||
-      !form.course ||
-      !form.branch ||
-      !form.studentCount ||
-      !form.stallType
-    ) {
-      alert("All fields are required ❌");
+    const required = [
+      "name",
+      "phone",
+      "sapId",
+      "semester",
+      "rollNo",
+      "course",
+      "branch",
+      "stallType",
+    ];
+
+    for (let field of required) {
+      if (!form[field]) {
+        alert(`Please fill ${field}`);
+        return;
+      }
+    }
+
+    if (form.phone.length !== 10 || !/^\d+$/.test(form.phone)) {
+      alert("Phone must be 10 digits");
       return;
     }
 
-    if (form.phone.length !== 10) {
-      alert("Phone must be 10 digits ❌");
+    if (form.sapId.length !== 11 || !/^\d+$/.test(form.sapId)) {
+      alert("SAP ID must be 11 digits");
       return;
     }
 
-    if (form.sapId.length !== 11) {
-      alert("SAP ID must be 11 digits ❌");
+    if (form.stallType !== "TREASURE" && !form.location) {
+      alert("Please select location");
+      return;
+    }
+
+    if (form.stallType !== "TREASURE" && !form.stallName.trim()) {
+      alert("Please enter stall details");
       return;
     }
 
     if (!form.terms) {
-      alert("Please accept terms & conditions ❌");
+      alert("Accept Festum rules");
       return;
     }
 
-    // 🔐 FINAL recalculation before saving (MOST IMPORTANT)
-    const finalBase = getBasePrice(form.stallType);
-    const finalExtras = getExtraCharges(
-      form.extraTables,
-      form.electricBoards
-    );
-    const finalTotal = finalBase + finalExtras;
+    const prices = calculatePrices();
+
+    const data = {
+      name: form.name.trim(),
+      phone: form.phone,
+      sapId: form.sapId,
+      semester: form.semester,
+      rollNo: form.rollNo,
+      course: form.course,
+      branch: form.branch,
+      stallType: form.stallType,
+      stallName: form.stallName || "N/A",
+      location: form.location || "N/A",
+      electric: form.electric,
+      totalAmount: prices.totalAmount,
+      paid: false,
+      createdAt: serverTimestamp(),
+    };
 
     try {
       setLoading(true);
-
-      await addDoc(collection(db, "registrations"), {
-        ...form,
-        extraTables: Number(form.extraTables),
-        electricBoards: Number(form.electricBoards),
-        basePrice: finalBase,
-        extraCharges: finalExtras,
-        totalAmount: finalTotal,
-        paid: false,
-        createdAt: serverTimestamp(),
-      });
-
-      alert("Registration successful ✅");
+      await addDoc(collection(db, "registrations"), data);
+      alert("Registration Successful");
       navigate("/thanks");
-    } catch (error) {
-      console.error("Firestore Error:", error);
-      alert("Something went wrong ❌");
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
-  /* ================= UI ================= */
+  const prices = calculatePrices();
 
+  /* ================= UI ================= */
   return (
     <div className="App">
-      <h1>Student Registration</h1>
+      <h1>Festum Registration</h1>
 
       <div className="form-card">
-        <div className="form-grid">
-          <input name="name" placeholder="Name" onChange={handleChange} />
-          <input name="phone" placeholder="Phone (10 digits)" maxLength={10} onChange={handleChange} />
-          <input name="sapId" placeholder="SAP ID (11 digits)" maxLength={11} onChange={handleChange} />
-          <input name="semester" placeholder="Semester" onChange={handleChange} />
-          <input name="rollNo" placeholder="Roll No" onChange={handleChange} />
+        {/* STUDENT DETAILS */}
+        <div className="section">
+          <div className="section-title">Student Details</div>
+          <div className="form-grid">
+            <input name="name" placeholder="Name" value={form.name} onChange={handleChange} />
+            <input name="phone" placeholder="Phone (10 digits)" maxLength={10} value={form.phone} onChange={handleChange} />
+            <input name="sapId" placeholder="SAP ID (11 digits)" maxLength={11} value={form.sapId} onChange={handleChange} />
+            <input name="semester" placeholder="Semester" value={form.semester} onChange={handleChange} />
+            <input name="rollNo" placeholder="Roll No" value={form.rollNo} onChange={handleChange} />
 
-          <select name="course" onChange={handleChange}>
-            <option value="">Course</option>
-            <option value="Diploma">Diploma</option>
-            <option value="Degree">Degree</option>
-          </select>
+            <select name="course" value={form.course} onChange={handleChange}>
+              <option value="">Course</option>
+              <option value="Diploma">Diploma</option>
+              <option value="Degree">Degree</option>
+            </select>
 
-          <select name="branch" onChange={handleChange}>
-            <option value="">Branch</option>
-            <option value="Computer">Computer</option>
-            <option value="IT">IT</option>
-            <option value="Civil">Civil</option>
-            <option value="Mechanical">Mechanical</option>
-            <option value="Chemical">Chemical</option>
-            <option value="Plastic">Plastic</option>
-            <option value="AIML">AIML</option>
-            <option value="Computer Science">Computer Science</option>
-            <option value="EXTC">EXTC</option>
-            <option value="Electrical">Electrical</option>
-          </select>
-
-          <select name="studentCount" onChange={handleChange}>
-            <option value="">No. of Students</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-          </select>
-
-          <select name="stallType" onChange={handleChange}>
-            <option value="">Stall Type</option>
-            <option value="Food">Food (₹300)</option>
-            <option value="Game">Game (₹600)</option>
-            <option value="Both">Game + Food (₹900)</option>
-            <option value="other">Other (₹300)</option>
-          </select>
-
-          <input type="number" name="extraTables" placeholder="Extra Tables" min="0" onChange={handleChange} />
-          <input type="number" name="electricBoards" placeholder="Electric Boards" min="0" onChange={handleChange} />
+            <select name="branch" value={form.branch} onChange={handleChange}>
+              <option value="">Branch</option>
+              <option value="Computer Engineering">Computer Engineering</option>
+              <option value="Information Technology">Information Technology</option>
+              <option value="Civil">Civil</option>
+              <option value="Mechanical">Mechanical</option>
+              <option value="Chemical">Chemical</option>
+              <option value="Plastic">Plastic</option>
+              <option value="AIML">AI & ML</option>
+              <option value=">Computer science">Computer science</option>
+              <option value="EXTC">EXTC</option>
+              <option value="Electrical">Electrical</option>
+            </select>
+          </div>
         </div>
 
-        <div className="terms-row">
-          <label className="terms-container">
-            <input type="checkbox" name="terms" checked={form.terms} onChange={handleChange} />
-            <span className="checkmark"></span>
-            <span className="terms-text "  style={{ color: "#000000" }}>
-              I accept all <b>terms & conditions</b>
-            </span>
-          </label>
+        {/* STALL DETAILS */}
+        <div className="section">
+          <div className="section-title">Stall Details</div>
+          <div className="form-grid">
+            <select name="stallType" value={form.stallType} onChange={handleChange}>
+              <option value="">Stall Type</option>
+              <option value="FOOD_1(3)">1 Food Stall (3 members)</option>
+              <option value="FOOD_2(3+1)">2 Food Stalls (3+1)</option>
+              <option value="GAME(2)">Game Stall (2 members)</option>
+              <option value="OTHER">Other Stall</option>
+              <option value="TREASURE">Treasure Hunt (5 members)</option>
+            </select>
+
+            {form.stallType !== "TREASURE" && (
+              <select name="location" value={form.location} onChange={handleChange}>
+                <option value="">Location</option>
+                <option value="Ground">Ground</option>
+                <option value="Basement">Upper Basement</option>
+              </select>
+            )}
+          </div>
+
+          {form.stallType && form.stallType !== "TREASURE" && (
+            <div className="form-group full-width">
+              <label>{getStallNameLabel()}</label>
+              <input
+                name="stallName"
+                placeholder={`Enter ${getStallNameLabel()}`}
+                value={form.stallName}
+                onChange={handleChange}
+              />
+            </div>
+          )}
+
+          {form.stallType !== "TREASURE" && (
+          <label className="checkbox-row">
+  <input
+    type="checkbox"
+    name="electric"
+    checked={form.electric}
+    onChange={handleChange}
+  />
+  <span>Electric Plug Point Required (₹350)</span>
+</label>
+
+          )}
         </div>
 
+        {/* AMOUNT SUMMARY */}
         <div className="summary">
-          💰 Base Price: ₹{basePrice} <br />
-          ➕ Extra Charges: ₹{extraCharges} <br />
-          🪙 <b>Total Amount: ₹{totalAmount}</b>
+          <h3>Amount Summary</h3>
+          <p>Base Price: ₹{prices.basePrice}</p>
+          {form.electric && <p>Electric Charge: ₹{prices.electricCharge}</p>}
+          <h2>Total: ₹{prices.totalAmount}</h2>
         </div>
 
-        <div className="action-row">
-          <button className="btn-primary" onClick={submit} disabled={loading}>
-            {loading ? "Submitting..." : "Submit Registration"}
-          </button>
+        {/* TERMS */}
+       <label className="checkbox-row">
+  <input
+    type="checkbox"
+    name="terms"
+    checked={form.terms}
+    onChange={handleChange}
+  />
+  <span>I accept all Festum rules & conditions</span>
+</label>
 
-          <button className="btn-secondary" onClick={() => navigate("/")} disabled={loading}>
-            ⬅ Back to Welcome
-          </button>
-        </div>
+        <button className="submit-btn" onClick={submit} disabled={loading}>
+          {loading ? "Submitting..." : "Submit Registration"}
+        </button>
       </div>
     </div>
   );
