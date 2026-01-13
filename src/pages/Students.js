@@ -9,6 +9,24 @@ import {
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
+/* ================= PRICES (SAME AS REGISTER) ================= */
+const PRICES = {
+  Ground: {
+    FOOD_1: 600,
+    FOOD_2: 1100,
+    GAME: 1000,
+    OTHER: 1000,
+  },
+  Basement: {
+    FOOD_1: 500,
+    FOOD_2: 900,
+    GAME: 700,
+    OTHER: 700,
+  },
+  ELECTRIC: 350,
+  TREASURE: 500,
+};
+
 function Students() {
   const navigate = useNavigate();
 
@@ -17,14 +35,12 @@ function Students() {
   const [collector, setCollector] = useState({});
 
   /* ================= ADMIN PROTECTION ================= */
-
   useEffect(() => {
     const admin = sessionStorage.getItem("admin");
     if (admin !== "true") navigate("/login");
   }, [navigate]);
 
   /* ================= FETCH DATA ================= */
-
   useEffect(() => {
     fetchStudents();
   }, []);
@@ -34,29 +50,22 @@ function Students() {
     setStudents(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
   };
 
-  /* ================= PRICE LOGIC (SAME AS REGISTER) ================= */
-
+  /* ================= PRICE CALCULATION ================= */
   const calculateTotal = (s) => {
     let base = 0;
-    const stall = (s.stallType || "").toLowerCase();
 
-    if (stall === "food") base = 300;
-    else if (stall === "game") base = 600;
-    else if (stall === "both") base = 900;
-    else if (stall === "other") base = 300;
+    if (s.stallType === "TREASURE") {
+      base = PRICES.TREASURE;
+    } else if (s.location) {
+      base = PRICES[s.location]?.[s.stallType] || 0;
+    }
 
-    const extraTables = Number(s.extraTables) || 0;
-    const electricBoards = Number(s.electricBoards) || 0;
+    const electric = s.electric ? PRICES.ELECTRIC : 0;
 
-    const extraCharges =
-      extraTables * 150 +
-      electricBoards * 150;
-
-    return base + extraCharges;
+    return base + electric;
   };
 
   /* ================= MARK AS PAID ================= */
-
   const markPaid = async (s) => {
     if (!collector[s.id]) {
       alert("Please select who collected money");
@@ -75,15 +84,13 @@ function Students() {
   };
 
   /* ================= DELETE ================= */
-
   const deleteStudent = async (id) => {
-    if (!window.confirm("Delete this student?")) return;
+    if (!window.confirm("Delete this entry?")) return;
     await deleteDoc(doc(db, "registrations", id));
     fetchStudents();
   };
 
   /* ================= SEARCH ================= */
-
   const filtered = students.filter(
     (s) =>
       s.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -91,31 +98,22 @@ function Students() {
   );
 
   /* ================= COUNTS ================= */
-
   const totalCount = students.length;
   const paidCount = students.filter((s) => s.paid).length;
   const unpaidCount = totalCount - paidCount;
 
   /* ================= LOGOUT ================= */
-
   const logout = () => {
     sessionStorage.removeItem("admin");
     navigate("/login");
   };
 
   /* ================= UI ================= */
-
   return (
     <div className="App">
       {/* HEADER */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <h1>Registered Students</h1>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <h1>Festum Registrations</h1>
         <button className="btn-secondary" onClick={logout}>
           Logout
         </button>
@@ -123,9 +121,7 @@ function Students() {
 
       {/* COUNTS */}
       <p>
-        👥 Total: {totalCount} &nbsp; | &nbsp;
-        ✅ Paid: {paidCount} &nbsp; | &nbsp;
-        ❌ Unpaid: {unpaidCount}
+        👥 Total: {totalCount} | ✅ Paid: {paidCount} | ❌ Unpaid: {unpaidCount}
       </p>
 
       {/* SEARCH */}
@@ -136,44 +132,46 @@ function Students() {
         style={{ marginBottom: 20 }}
       />
 
-      {/* STUDENT LIST */}
+      {/* LIST */}
       {filtered.map((s, i) => (
-        <div key={s.id} className="form-card" style={{ marginBottom: 25 }}>
+        <div key={s.id} className="form-card" style={{ marginBottom: 20 }}>
           <b>
             {i + 1}. {s.name}
           </b>
           <br />
-          Phone: {s.phone}
+          📞 Phone: {s.phone}
           <br />
-          SAP ID: {s.sapId}
+          🆔 SAP ID: {s.sapId}
           <br />
-          Semester: {s.semester}
+          🎓 Course: {s.course}
           <br />
-          Roll No: {s.rollNo}
+          🧑‍🎓 Branch: {s.branch}
           <br />
-          Course: {s.course}
+          📘 Semester: {s.semester}
           <br />
-          Branch: {s.branch}
-          <br />
-          Students: {s.studentCount}
-          <br />
-          Stall: {s.stallType}
-          <br />
-          Extra Tables: {s.extraTables || 0}
-          <br />
-          Electric Boards: {s.electricBoards || 0}
+          📄 Roll No: {s.rollNo}
           <br />
           <br />
 
-          <b>🪙 Total Amount: ₹{calculateTotal(s)}</b>
+          🏷 Stall Type: <b>{s.stallType}</b>
+          <br />
+          📝 Stall Name: <b>{s.stallName || "N/A"}</b>
+          <br />
+          📍 Location: {s.location || "N/A"}
+          <br />
+          🔌 Electric Plug: {s.electric ? "Yes" : "No"}
           <br />
           <br />
 
-          {/* PAID / UNPAID */}
+          <b>💰 Total Amount: ₹{calculateTotal(s)}</b>
+          <br />
+          <br />
+
+          {/* PAID STATUS */}
           {s.paid ? (
             <p style={{ color: "#22c55e" }}>
               ✅ PAID <br />
-              👤 Collected by: {s.collectedBy}
+              👤 Collected By: {s.collectedBy}
             </p>
           ) : (
             <>
@@ -188,6 +186,7 @@ function Students() {
                 <option value="Yash">Yash</option>
                 <option value="Vrinda">Vrinda</option>
               </select>
+
               <br />
               <br />
 
